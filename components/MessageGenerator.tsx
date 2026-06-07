@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { Wand2, Check, X, Send, Clock } from "lucide-react";
 import { StatusBadge } from "@/components/badges";
 import { draftStatusLabel } from "@/lib/labels";
+import { createDraftAction, setDraftStatusAction } from "@/lib/actions";
 import type { Company, Contact, EmailDraft, DraftStatus } from "@/lib/types";
 
 interface Props {
@@ -45,6 +46,7 @@ export default function MessageGenerator({ contacts, companies, initialDrafts }:
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
   const [drafts, setDrafts] = useState<EmailDraft[]>(initialDrafts);
+  const [, startTransition] = useTransition();
 
   const selected = contacts.find((c) => c.id === contactId);
 
@@ -73,12 +75,18 @@ export default function MessageGenerator({ contacts, companies, initialDrafts }:
     setDrafts((d) => [draft, ...d]);
     setSubject("");
     setBody("");
+    startTransition(() => {
+      void createDraftAction({ contact_id: selected.id, campaign_id: null, subject, body });
+    });
   }
 
   function setStatus(id: string, status: DraftStatus) {
     setDrafts((ds) =>
       ds.map((d) => (d.id === id ? { ...d, status, approved_at: status === "approved" ? new Date().toISOString() : d.approved_at } : d))
     );
+    if (status === "approved" || status === "rejected") {
+      startTransition(() => { void setDraftStatusAction(id, status); });
+    }
   }
 
   const contactName = (id: string) => contacts.find((c) => c.id === id)?.full_name ?? "Contacto";

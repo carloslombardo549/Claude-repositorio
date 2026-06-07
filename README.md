@@ -136,11 +136,18 @@ En **Empresas objetivo → Importar CSV** se sube el export de Apollo. El sistem
 
 ---
 
+## Persistencia (server actions)
+
+La escritura está conectada a Supabase mediante server actions (`lib/actions.ts`):
+guardar ICP, añadir/quitar exclusiones, crear campañas, crear borradores,
+aprobar/rechazar borradores e **importar contactos del CSV de Apollo** (con
+deduplicación de empresas y clasificación A/B/C). Cada acción valida con Zod y,
+si Supabase no está configurado, no persiste (el modo demo usa estado local).
+
 ## Próximas fases (fuera del MVP)
 
 - Activar el **envío real de emails** (integración con proveedor de envío).
-- Server actions de escritura conectadas a Supabase (importación persistente,
-  creación de campañas, generación de informes guardados).
+- Informes semanales guardados como snapshots (`weekly_reports`).
 - Generación de borradores asistida por IA (actualmente por plantillas).
 - Detección automática de sentimiento en respuestas.
 

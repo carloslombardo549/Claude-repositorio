@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import Papa from "papaparse";
 import { X, UploadCloud, CheckCircle2, AlertTriangle, Ban } from "lucide-react";
 import { normalizeApolloRow, fullName, isExcluded, type NormalizedRow } from "@/lib/csv";
 import type { ExclusionEntry, IcpProfile } from "@/lib/types";
+import type { ApolloRow } from "@/lib/validation/schemas";
 import { scoreCompany } from "@/lib/scoring";
+import { importApolloAction } from "@/lib/actions";
 
 interface Props {
   open: boolean;
@@ -23,12 +25,15 @@ interface PreviewRow {
   score: number;
   excluded: boolean;
   errors: string[];
+  data: ApolloRow | null;
 }
 
 export default function ImportCsvModal({ open, onClose, icp, exclusions }: Props) {
   const [rows, setRows] = useState<PreviewRow[]>([]);
   const [fileName, setFileName] = useState<string>("");
   const [done, setDone] = useState(false);
+  const [importedCount, setImportedCount] = useState(0);
+  const [pending, startTransition] = useTransition();
 
   if (!open) return null;
 
@@ -62,6 +67,7 @@ export default function ImportCsvModal({ open, onClose, icp, exclusions }: Props
             score,
             excluded,
             errors: norm.errors,
+            data: d,
           };
         });
         setRows(preview);
@@ -72,6 +78,15 @@ export default function ImportCsvModal({ open, onClose, icp, exclusions }: Props
   const valid = rows.filter((r) => r.errors.length === 0 && !r.excluded);
   const blocked = rows.filter((r) => r.excluded);
   const invalid = rows.filter((r) => r.errors.length > 0);
+
+  function commit() {
+    const payload = valid.map((r) => r.data).filter((d): d is ApolloRow => d !== null);
+    startTransition(async () => {
+      const res = await importApolloAction(payload);
+      setImportedCount(res.inserted ?? payload.length);
+      setDone(true);
+    });
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
@@ -152,22 +167,22 @@ export default function ImportCsvModal({ open, onClose, icp, exclusions }: Props
           {done && (
             <div className="mt-4 flex items-center gap-2 text-emerald-400 text-sm bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-3">
               <CheckCircle2 className="w-4 h-4" />
-              {valid.length} contactos importados (demo: sin persistencia). Con Supabase configurado se guardarían en la base de datos.
+              {importedCount} contactos procesados. Con Supabase configurado se guardan en la base de datos; en modo demo no se persisten.
             </div>
           )}
         </div>
 
         {rows.length > 0 && (
           <div className="p-5 border-t border-slate-800 flex justify-end gap-2">
-            <button onClick={() => { setRows([]); setDone(false); }} className="px-4 py-2 text-slate-300 text-sm hover:text-white">
+            <button onClick={() => { setRows([]); setDone(false); setImportedCount(0); }} className="px-4 py-2 text-slate-300 text-sm hover:text-white">
               Elegir otro archivo
             </button>
             <button
-              onClick={() => setDone(true)}
-              disabled={valid.length === 0 || done}
+              onClick={commit}
+              disabled={valid.length === 0 || done || pending}
               className="px-4 py-2 bg-gradient-to-r from-blue-500 to-emerald-500 text-white text-sm font-medium rounded-lg disabled:opacity-50"
             >
-              Importar {valid.length} contactos
+              {pending ? "Importando…" : `Importar ${valid.length} contactos`}
             </button>
           </div>
         )}

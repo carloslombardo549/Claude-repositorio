@@ -1,7 +1,8 @@
 import MainLayout from "@/components/MainLayout";
 import PageHeader from "@/components/PageHeader";
 import { StatusBadge } from "@/components/badges";
-import { Plus, Mail, MessageSquare, CalendarCheck } from "lucide-react";
+import { Mail, MessageSquare, CalendarCheck } from "lucide-react";
+import NewCampaignButton from "@/components/NewCampaignButton";
 import { getCampaigns } from "@/lib/data";
 import { campaignStatusLabel } from "@/lib/labels";
 
@@ -14,11 +15,7 @@ export default async function CampanasPage() {
         <PageHeader
           title="Campañas"
           subtitle="Secuencias de captación por segmento. El envío real está deshabilitado en esta fase."
-          actions={
-            <button className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-emerald-500 text-white text-sm font-medium rounded-lg hover:opacity-90">
-              <Plus className="w-4 h-4" /> Nueva campaña
-            </button>
-          }
+          actions={<NewCampaignButton />}
         />
 
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-5">

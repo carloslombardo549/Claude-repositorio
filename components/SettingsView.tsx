@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { Save, Plus, Trash2, ShieldCheck, User, CheckCircle2 } from "lucide-react";
 import TagInput from "@/components/TagInput";
 import { icpSchema, exclusionSchema } from "@/lib/validation/schemas";
 import { exclusionTypeLabel } from "@/lib/labels";
+import { saveIcpAction, addExclusionAction, removeExclusionAction } from "@/lib/actions";
 import type { IcpProfile, ExclusionEntry, ExclusionType } from "@/lib/types";
 
 export default function SettingsView({
@@ -17,6 +18,7 @@ export default function SettingsView({
   const [icp, setIcp] = useState(initialIcp);
   const [saved, setSaved] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
+  const [pending, startTransition] = useTransition();
 
   const [exclusions, setExclusions] = useState(initialExclusions);
   const [newType, setNewType] = useState<ExclusionType>("domain");
@@ -24,7 +26,7 @@ export default function SettingsView({
   const [newReason, setNewReason] = useState("");
 
   function saveIcp() {
-    const result = icpSchema.safeParse({
+    const input = {
       name: icp.name,
       sectors: icp.sectors,
       employee_min: icp.employee_min,
@@ -33,32 +35,44 @@ export default function SettingsView({
       geographies: icp.geographies,
       decision_titles: icp.decision_titles,
       notes: icp.notes,
-    });
+    };
+    const result = icpSchema.safeParse(input);
     if (!result.success) {
       setErrors(result.error.issues.map((i) => i.message));
       return;
     }
     setErrors([]);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2500);
+    startTransition(async () => {
+      const res = await saveIcpAction(result.data);
+      if (!res.ok) {
+        setErrors([res.error ?? "No se pudo guardar"]);
+        return;
+      }
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2500);
+    });
   }
 
   function addExclusion() {
     const result = exclusionSchema.safeParse({ type: newType, value: newValue, reason: newReason || null });
     if (!result.success) return;
-    setExclusions((e) => [
-      {
-        id: `local-${Date.now()}`,
-        organization_id: icp.organization_id,
-        type: newType,
-        value: newValue.trim(),
-        reason: newReason || null,
-        created_at: new Date().toISOString(),
-      },
-      ...e,
-    ]);
+    const optimistic: ExclusionEntry = {
+      id: `local-${Date.now()}`,
+      organization_id: icp.organization_id,
+      type: newType,
+      value: newValue.trim(),
+      reason: newReason || null,
+      created_at: new Date().toISOString(),
+    };
+    setExclusions((e) => [optimistic, ...e]);
     setNewValue("");
     setNewReason("");
+    startTransition(() => { void addExclusionAction(result.data); });
+  }
+
+  function removeExclusion(id: string) {
+    setExclusions((e) => e.filter((x) => x.id !== id));
+    startTransition(() => { void removeExclusionAction(id); });
   }
 
   return (
@@ -70,8 +84,8 @@ export default function SettingsView({
             <h2 className="text-white font-semibold">Perfil de Cliente Ideal (ICP)</h2>
             <p className="text-slate-400 text-sm mt-0.5">Define el encaje. Las empresas se clasifican A/B/C contra estos criterios.</p>
           </div>
-          <button onClick={saveIcp} className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-emerald-500 text-white text-sm font-medium rounded-lg hover:opacity-90">
-            <Save className="w-4 h-4" /> Guardar
+          <button onClick={saveIcp} disabled={pending} className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-emerald-500 text-white text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50">
+            <Save className="w-4 h-4" /> {pending ? "Guardando…" : "Guardar"}
           </button>
         </div>
 
@@ -179,7 +193,7 @@ export default function SettingsView({
                 <span className="text-white text-sm">{ex.value}</span>
                 {ex.reason && <span className="text-slate-500 text-xs">— {ex.reason}</span>}
               </div>
-              <button onClick={() => setExclusions((e) => e.filter((x) => x.id !== ex.id))} className="text-slate-500 hover:text-rose-400">
+              <button onClick={() => removeExclusion(ex.id)} className="text-slate-500 hover:text-rose-400">
                 <Trash2 className="w-4 h-4" />
               </button>
             </div>
