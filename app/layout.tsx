@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "ACAI - Sistema de Adquisición de Clientes con IA",
-  description: "Plataforma inteligente para adquisición de clientes B2B con inteligencia artificial",
+  title: "Captia — Sistema de captación B2B",
+  description: "Plataforma interna de captación B2B para agencias: ICP, importación CSV de Apollo, clasificación A/B/C, campañas con aprobación humana y pipeline comercial.",
 };
 
 export default function RootLayout({

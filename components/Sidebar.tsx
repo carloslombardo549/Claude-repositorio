@@ -3,24 +3,21 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  LayoutDashboard,
-  Building2,
-  Users,
-  Megaphone,
-  Wand2,
-  FileBarChart2,
-  ExternalLink,
-  Settings,
-  Zap,
+  LayoutDashboard, Building2, Users, Megaphone, Wand2, Inbox,
+  GitBranch, CalendarCheck, FileBarChart2, Settings, Zap, LogOut,
 } from "lucide-react";
 
 const navItems = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/cuentas", label: "Cuentas Objetivo", icon: Building2 },
+  { href: "/empresas", label: "Empresas objetivo", icon: Building2 },
   { href: "/contactos", label: "Contactos", icon: Users },
   { href: "/campanas", label: "Campañas", icon: Megaphone },
-  { href: "/generador", label: "Generador de Mensajes", icon: Wand2 },
-  { href: "/reporte", label: "Reporte Semanal", icon: FileBarChart2 },
+  { href: "/generador", label: "Generador de mensajes", icon: Wand2 },
+  { href: "/respuestas", label: "Bandeja de respuestas", icon: Inbox },
+  { href: "/pipeline", label: "Pipeline", icon: GitBranch },
+  { href: "/reuniones", label: "Reuniones", icon: CalendarCheck },
+  { href: "/informes", label: "Informes semanales", icon: FileBarChart2 },
+  { href: "/configuracion", label: "Configuración", icon: Settings },
 ];
 
 export default function Sidebar() {
@@ -35,17 +32,17 @@ export default function Sidebar() {
             <Zap className="w-5 h-5 text-white" />
           </div>
           <div>
-            <div className="text-white font-bold text-lg leading-none">ACAI</div>
-            <div className="text-slate-400 text-xs mt-0.5">Sistema de Adquisición</div>
+            <div className="text-white font-bold text-lg leading-none">Captia</div>
+            <div className="text-slate-400 text-xs mt-0.5">Captación B2B</div>
           </div>
         </div>
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 p-4 space-y-1">
+      <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
         {navItems.map((item) => {
           const Icon = item.icon;
-          const isActive = pathname === item.href;
+          const isActive = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
           return (
             <Link
               key={item.href}
@@ -65,16 +62,6 @@ export default function Sidebar() {
             </Link>
           );
         })}
-
-        <div className="pt-2 mt-2 border-t border-slate-800">
-          <Link
-            href="/landing-ejemplo"
-            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-150 group"
-          >
-            <ExternalLink className="w-4 h-4 flex-shrink-0 text-slate-500 group-hover:text-slate-300" />
-            Ver Landing de Ejemplo
-          </Link>
-        </div>
       </nav>
 
       {/* Bottom */}
@@ -82,16 +69,16 @@ export default function Sidebar() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold">
-              AV
+              AD
             </div>
             <div>
-              <div className="text-white text-sm font-medium">Admin User</div>
-              <div className="text-slate-500 text-xs">admin@acai.mx</div>
+              <div className="text-white text-sm font-medium">Admin Agencia</div>
+              <div className="text-slate-500 text-xs">Cliente Demo S.L.</div>
             </div>
           </div>
-          <button className="text-slate-500 hover:text-slate-300 transition-colors">
-            <Settings className="w-4 h-4" />
-          </button>
+          <Link href="/login" className="text-slate-500 hover:text-slate-300 transition-colors" title="Cerrar sesión">
+            <LogOut className="w-4 h-4" />
+          </Link>
         </div>
       </div>
     </aside>
